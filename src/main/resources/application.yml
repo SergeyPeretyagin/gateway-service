@@ -1,0 +1,190 @@
+server:
+  port: 8089
+
+management:
+  endpoint:
+    gateway:
+      enabled: true  # Позволяет gateway создавать маршруты на основе служб зарегистрированных в service discovery(eureka server)
+  endpoints:
+    web:
+      exposure:
+        include: gateway, *  # это для actuator, можно снимать метрики
+
+spring:
+  application:
+    name: gateway # id приложения, которое нужно указывать в микросервисах
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true # не обращает внимание регистр букв
+      routes:
+#*********************************************************************************************************
+      - id: serviceuser
+        uri: lb://serviceuser # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/registration/**  # endpoint в микросервисе (RegistrationController)
+          - Method=GET,POST,PATCH,DELETE
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+
+                                            # ******* В РАЗРАБОТКЕ *******
+
+#          - name: CircuitBreaker # Не позволяет клиенту  продолжать  обращаться  к  службе,  потерпевшей  сбой или  испытывающей  проблемы  с  производительностью
+#            args:
+#              name: serviceuser
+#              fallbackuri: forward:/registration # переводит запрос соответсующий endpoint на FallbackController
+ #*********************************************************************************************************
+      - id: serviceuser
+        uri: lb://serviceuser # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/login/**  # endpoint в микросервисе (LoginController)
+          - Method=GET,PATCH,DELETE
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+
+                                           # ******* В РАЗРАБОТКЕ *******
+#          - name: CircuitBreaker
+#            args:
+#              name: serviceuser
+#              fallbackuri: forward:/login  # переводит запрос соответсующий endpoint на FallbackController
+#*********************************************************************************************************
+      - id: serviceuser
+        uri: lb://serviceuser  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+         - Path=/api/v1/user/settings/**  # endpoint в микросервисе (SettingController)
+         - Method=GET,POST,PATCH,DELETE
+        filters:
+         - StripPrefix=2  # отсекает префикс /api/v1
+         - PrefixPath=/auth  # добавляет префикс /auth
+         - FilterJwt  # фильтр проверки токена
+#*********************************************************************************************************
+      - id: serviceuser
+        uri: lb://serviceuser  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/security/**  # endpoint в микросервисе (SecurityController)
+          - Method=GET,POST,PATCH,DELETE
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+#*********************************************************************************************************
+      - id: serviceuser
+        uri: lb://serviceuser  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/user-service/**  # endpoint в микросервисе (SecurityController)
+          - Method=DELETE
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+#*******************************************************************************************************
+      - id: credit-service
+        uri: lb://credit-service  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/credits/**  # endpoint в микросервисе (credit-service)
+          - Method=GET
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+          - PrefixPath=/auth  # добавляет префикс /auth
+          - FilterJwt  # фильтр проверки токена
+#*******************************************************************************************************
+      - id: credit-service
+        uri: lb://credit-service  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/credit-cards/**  # endpoint в микросервисе (credit-service)
+          - Method=GET,PATCH
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+          - PrefixPath=/auth  # добавляет префикс /auth
+          - FilterJwt  # фильтр проверки токена
+#*******************************************************************************************************
+      - id: credit-service
+        uri: lb://credit-service  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/credit-orders/**  # endpoint в микросервисе (credit-service)
+          - Method=GET,POST
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+          - PrefixPath=/auth  # добавляет префикс /auth
+          - FilterJwt  # фильтр проверки токена
+#*******************************************************************************************************
+      - id: credit-service
+        uri: lb://credit-service  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/credit-products/**  # endpoint в микросервисе (credit-service)
+          - Method=GET
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+          - PrefixPath=/auth  # добавляет префикс /auth
+          - FilterJwt  # фильтр проверки токена
+#*******************************************************************************************************
+      - id: payment-service
+        uri: lb://payment-service  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/payment/**  # endpoint в микросервисе (payment-service)
+          - Method=POST,GET
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+          - PrefixPath=/auth  # добавляет префикс /auth
+          - FilterJwt  # фильтр проверки токена
+#*******************************************************************************************************
+      - id: payment-service
+        uri: lb://payment-service  # gateway находит в eureka-server микросервис по id application.name
+        predicates:
+          - Path=/api/v1/history/**  # endpoint в микросервисе (payment-service)
+          - Method=POST,GET
+        filters:
+          - StripPrefix=2  # отсекает префикс /api/v1
+          - PrefixPath=/auth  # добавляет префикс /auth
+          - FilterJwt  # фильтр проверки токена
+#*******************************************************************************************************
+springdoc:
+  swagger-ui:
+    path: /openapi/swagger-ui.html
+    urls:
+      - name: gateway
+        url: /gateway/v3/api-docs
+      - name: serviceuser
+        url: /serviceuser/v3/api-docs
+      - name: payment-service
+        url: /payment-service/v3/api-docs
+  api-docs:
+    enabled: true
+
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    service-url:
+#      defaultZone: http://10.10.14.16:8762/eureka
+      defaultZone: http://localhost:8762/eureka
+
+
+logging:
+  file:
+    name: ${sys:}/logs/GatewayLog/GatewayLogFile.log
+  pattern:
+    console: "%d %-5level %logger : %msg%n"
+    file: "%d %-5level [%thread] %logger : %msg%n"
+  level:
+    org.springframework.boot: INFO
+    com.gatewayserver: INFO
+
+resilience4j:
+ circuitbreaker:
+  instances:
+    authController:
+      registerHealthIndicator: true
+      ringBufferSizeInClosedState: 5
+      ringBufferSizeInHalfOpenState: 3
+      waitDurationInOpenState: 10s
+      failureRateThreshold: 50
+      automatic-transition-from-open-to-half-open-enabled: true
+      sliding-window-size: 10
+      sliding-window-type: COUNT_BASED
+      recordExceptions:
+       - org.springframework.web.client.HttpServerErrorException
+       - java.io.IOException
+       - java.util.concurrent.TimeoutException
+       - org.springframework.web.client.ResourceAccessException

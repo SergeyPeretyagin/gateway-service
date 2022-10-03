@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  
+  backend-gateway-prod:
+    container_name: $PROGECT-$APP-main
+    domainname: backend-gateway
+    hostname: backend-gateway
+    build:
+      context: .
+    image: $AND_DOCKER_REGISTRY_NAME/$PROGECT-$APP:main
+    ports:
+      - 8089:8089
+    restart: always
+    volumes:
+        - backend_gateway_logs:/app/logs:rw
+    networks:
+      - a-music-net
+
+networks:
+  a-music-net:
+    external: true
+
+volumes:
+  backend_gateway_logs:
+
